@@ -508,10 +508,10 @@ claude plugin list
 2. 在 `custom_mcp_servers` 列表中添加服务器定义（与 `settings` 平级）：
 
    ```yaml
-   mcp_scope: "user"  # 配置作用域：local/project/user
+   mcp_scope: "user" # 配置作用域：local/project/user
    custom_mcp_servers:
      - name: "my-custom-mcp"
-       type: "stdio"  # 可选，默认 stdio
+       type: "stdio" # 可选，默认 stdio
        command: "python"
        args:
          - "/path/to/server.py"
@@ -524,15 +524,18 @@ claude plugin list
 #### 配置说明
 
 **通用参数**：
+
 - `name`：MCP 服务器名称（唯一标识）
 - `type`：服务器类型（`stdio`/`http`/`sse`，默认 `stdio`）
 
 **stdio 类型参数**：
+
 - `command`：启动命令（如 python、node、npx、uvx）
 - `args`：命令参数（数组格式）
 - `env`：环境变量（可选，支持从 secrets.yml 引用）
 
 **http/sse 类型参数**：
+
 - `url`：服务器 URL
 - `headers`：HTTP 请求头（用于认证）
 

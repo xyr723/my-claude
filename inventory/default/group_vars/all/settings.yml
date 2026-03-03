@@ -45,6 +45,11 @@ settings:
       - WebFetch
       - WebSearch
       - Write
+      - mcp__open-websearch__search
+      - mcp__open-websearch__fetchLinuxDoArticle
+      - mcp__open-websearch__fetchGithubReadme
+      - mcp__context7__resolve-library-id
+      - mcp__serena__get_current_config
     deny: []
 
   # ===== 会话与存储 =====
