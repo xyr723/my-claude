@@ -33,6 +33,11 @@ tasks:
     cmds:
       - '{{ .ANSIBLE_CMD }} {{ .PLAYBOOK }} --tags install_plugins'
 
+  manage-mcp:
+    desc: 仅管理自定义 MCP 服务器
+    cmds:
+      - '{{ .ANSIBLE_CMD }} {{ .PLAYBOOK }} --tags manage_mcp_servers'
+
   # ===== CI/CD 任务（跳过确认） =====
 
   deploy-force:
