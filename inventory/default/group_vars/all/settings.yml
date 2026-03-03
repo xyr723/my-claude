@@ -1,13 +1,17 @@
 settings:
+  # ===== 部署配置 =====
+  # 是否在更新 settings.json 前要求人工确认（true/false）
+  confirm_settings_update: true
+
   # ===== 模型配置 =====
-  model: "opus[1m]"
+  model: "opus"
   alwaysThinkingEnabled: true
   env:
-    ANTHROPIC_BASE_URL: https://openai.qiniu.com
-    ANTHROPIC_DEFAULT_OPUS_MODEL: "claude-4.6-opus"
-    ANTHROPIC_DEFAULT_SONNET_MODEL: "claude-4.5-sonnet"
-    ANTHROPIC_DEFAULT_HAIKU_MODEL: "claude-4.6-haiku"
-    CLAUDE_CODE_SUBAGENT_MODEL: "claude-4.5-sonnet"
+    ANTHROPIC_BASE_URL: https://ark.cn-beijing.volces.com/api/coding
+    ANTHROPIC_DEFAULT_OPUS_MODEL: "doubao-seed-2.0-code"
+    ANTHROPIC_DEFAULT_SONNET_MODEL: "doubao-seed-2.0-code"
+    ANTHROPIC_DEFAULT_HAIKU_MODEL: "doubao-seed-2.0-code"
+    CLAUDE_CODE_SUBAGENT_MODEL: "doubao-seed-2.0-code"
     # 隐私与遥测控制
     DISABLE_TELEMETRY: "1"
     DISABLE_ERROR_REPORTING: "1"
@@ -18,8 +22,8 @@ settings:
   # ===== 输出风格与语言 =====
   # outputStyle: "nekomata-engineer"
   # outputStyle: "laowang-engineer"
-  outputStyle: "tangtang-bot-engineer"
-  # outputStyle: "marionette-engineer"
+  # outputStyle: "tangtang-bot-engineer"
+  outputStyle: "marionette-engineer"
   # 首选响应语言（如 zh-CN、en、ja），比 CLAUDE.md 中的指令更底层可靠
   language: "zh-CN"
 

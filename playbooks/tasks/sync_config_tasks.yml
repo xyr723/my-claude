@@ -15,6 +15,12 @@
     state: directory
     mode: "0755"
 
+- name: 创建备份目录 tmps/backup
+  file:
+    path: "{{ playbook_dir }}/../tmps/backup"
+    state: directory
+    mode: "0755"
+
 - name: 渲染 claude settings.yml
   template:
     src: "{{ playbook_dir }}/../claude-assets/settings.yml.j2"
@@ -26,11 +32,108 @@
     src: /tmp/claude_settings.yml
   register: rendered_settings
 
-- name: 解析 YAML 并转为 JSON
+- name: 生成新的 settings.json（临时文件）
   copy:
     content: "{{ rendered_settings.content | b64decode | from_yaml | to_nice_json }}"
+    dest: /tmp/claude_settings_new.json
+    mode: "0644"
+
+- name: 检查现有 settings.json 是否存在
+  stat:
+    path: ~/.claude/settings.json
+  register: existing_settings
+
+- name: 格式化现有 settings.json（如果存在）
+  shell: |
+    if command -v jq >/dev/null 2>&1; then
+      jq -S . ~/.claude/settings.json > /tmp/claude_settings_existing_sorted.json 2>/dev/null || cp ~/.claude/settings.json /tmp/claude_settings_existing_sorted.json
+    else
+      cp ~/.claude/settings.json /tmp/claude_settings_existing_sorted.json
+    fi
+  when: existing_settings.stat.exists
+  changed_when: false
+
+- name: 格式化新的 settings.json
+  shell: |
+    if command -v jq >/dev/null 2>&1; then
+      jq -S . /tmp/claude_settings_new.json > /tmp/claude_settings_new_sorted.json 2>/dev/null || cp /tmp/claude_settings_new.json /tmp/claude_settings_new_sorted.json
+    else
+      cp /tmp/claude_settings_new.json /tmp/claude_settings_new_sorted.json
+    fi
+  changed_when: false
+
+- name: 检查是否有差异
+  shell: |
+    if [ -f /tmp/claude_settings_existing_sorted.json ]; then
+      diff -u /tmp/claude_settings_existing_sorted.json /tmp/claude_settings_new_sorted.json || true
+    else
+      echo "NEW_FILE"
+    fi
+  register: settings_diff
+  changed_when: false
+
+- name: 显示配置差异
+  debug:
+    msg: |
+      ========================================
+      settings.json 差异预览
+      ========================================
+      {% if settings_diff.stdout == "NEW_FILE" %}
+      这是首次创建 settings.json 文件
+      {% elif settings_diff.stdout == "" %}
+      ✓ 配置无变化，无需更新
+      {% else %}
+      {{ settings_diff.stdout }}
+      {% endif %}
+
+- name: 生成时间戳
+  shell: date +"%Y%m%d_%H%M%S"
+  register: timestamp
+  when: existing_settings.stat.exists and settings_diff.stdout != "" and settings_diff.stdout != "NEW_FILE"
+  changed_when: false
+
+- name: 备份现有 settings.json
+  copy:
+    src: ~/.claude/settings.json
+    dest: "{{ playbook_dir }}/../tmps/backup/settings.json.{{ timestamp.stdout }}"
+    mode: "0644"
+  when: existing_settings.stat.exists and settings_diff.stdout != "" and settings_diff.stdout != "NEW_FILE"
+
+- name: 显示备份信息
+  debug:
+    msg: |
+      备份已创建：tmps/backup/settings.json.{{ timestamp.stdout }}
+  when: existing_settings.stat.exists and settings_diff.stdout != "" and settings_diff.stdout != "NEW_FILE"
+
+- name: 询问是否继续更新
+  pause:
+    prompt: |
+      ========================================
+      ⚠️  检测到配置变更！
+      ========================================
+      {% if settings_diff.stdout == "NEW_FILE" %}
+      将创建新的 settings.json 文件
+      {% else %}
+      上述差异将被应用
+      {% endif %}
+
+      备份文件：{% if timestamp.stdout is defined %}tmps/backup/settings.json.{{ timestamp.stdout }}{% else %}（无需备份）{% endif %}
+
+      是否继续？(yes/no)
+  when: settings_diff.stdout != "" and settings.confirm_settings_update | default(true) | bool
+  register: user_confirmation
+
+- name: 确认用户选择
+  fail:
+    msg: "用户取消了配置更新"
+  when: settings_diff.stdout != "" and settings.confirm_settings_update | default(true) | bool and user_confirmation.user_input != "yes" and user_confirmation.user_input != "y"
+
+- name: 更新 settings.json
+  copy:
+    src: /tmp/claude_settings_new.json
     dest: ~/.claude/settings.json
     mode: "0644"
+  when: settings_diff.stdout != ""
 
 - name: 同步 output-styles 目录
   synchronize:

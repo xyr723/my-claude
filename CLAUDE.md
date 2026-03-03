@@ -4,6 +4,21 @@
 
 ---
 
+## 开发约定（AI 助手必读）
+
+- **Python 命令前缀**：所有 Python/Ansible 命令必须使用 `uv run` 前缀（如 `uv run ansible-playbook`）
+- **任务管理**：使用 `Taskfile.yml` 统一管理所有任务，运行 `task --list` 查看可用任务
+- **常用任务**：
+  - `task deploy` - 完整部署
+  - `task sync` - 仅同步配置
+  - `task check` - 预览变更
+- **配置同步**：更新 settings.yml 后使用 `task sync` 同步到 `~/.claude/`
+- **配置备份**：同步时自动备份旧配置到 `tmps/backup/settings.json.YYYYMMDD_HHMMSS`
+- **确认机制**：`confirm_settings_update` 变量控制是否需要人工确认更新（true/false）
+- **预览模式**：`task check` / `task check-sync` 使用 Ansible 的 `--check --diff` 模式
+
+---
+
 ## 📋 目录
 
 - [项目愿景](#项目愿景)
@@ -144,37 +159,91 @@ ls -la ~/.claude/output-styles/
 
 ## 运行与开发
 
-### 主要命令
+### 主要命令（推荐使用 Taskfile）
 
+**安装 Taskfile**：
 ```bash
+# 方式 1: 使用 Go 安装
+go install github.com/go-task/task/v3/cmd/task@latest
+
+# 方式 2: 使用 Homebrew
+brew install go-task
+
+# 方式 3: 其他安装方式见 https://taskfile.dev/installation/
+```
+
+**使用 Taskfile**：
+```bash
+# 查看所有可用任务
+task --list
+
 # 一键部署（推荐）
-uv run ansible-playbook playbooks/setup.yml
+task deploy
 
 # 同步配置到 ~/.claude（常用）
-uv run ansible-playbook playbooks/setup.yml --tags sync_config
+task sync
 
 # 仅安装插件
-uv run ansible-playbook playbooks/setup.yml --tags install_plugins
+task install-plugins
 
-# 仅检查 Claude CLI（不安装）
-uv run ansible-playbook playbooks/setup.yml --tags install_cli --check
+# 预览配置变更
+task check-sync
 
-# 查看配置变量（不执行）
-uv run ansible-playbook playbooks/setup.yml --tags sync_config --check --diff
+# 完整预览变更
+task check
 
-# 验证 Ansible 配置
-ansible-config dump --only-changed
+# 查看当前配置
+task view-settings
 
-# 查看 Ansible 日志
-tail -f tmps/ansible.log
+# 查看所有可用 tags
+task list-tags
 ```
+
+**Taskfile 任务列表**：
+
+| 任务 | 说明 |
+|------|------|
+| `task deploy` | 完整部署（安装插件 + 同步配置） |
+| `task sync` | 仅同步配置 |
+| `task install-plugins` | 仅安装插件 |
+| `task check` | 预览完整部署变更（不执行） |
+| `task check-sync` | 预览配置同步变更（不执行） |
+| `task sync-force` | 同步配置，跳过确认（CI/CD 用） |
+| `task deploy-force` | 完整部署，跳过确认（CI/CD 用） |
+| `task list-tags` | 查看所有可用 tags |
+| `task list-tasks` | 查看所有 Ansible 任务 |
+| `task view-settings` | 查看当前 ~/.claude/settings.json |
+
+**说明**：
+- 日常使用推荐 `Taskfile` 方式
+- CI/CD 环境使用带 `-force` 后缀的任务跳过确认
+- 原始 ansible-playbook 命令仍然可用
+
+### 配置同步安全机制
+
+同步 `settings.json` 时会自动执行以下安全检查：
+
+1. **差异检测**：使用 `jq -S` 对新旧配置进行排序格式化后比较
+2. **差异预览**：显示统一 diff 格式的变更内容
+3. **自动备份**：备份旧配置到 `tmps/backup/settings.json.YYYYMMDD_HHMMSS`
+4. **二次确认**：人工确认后才执行更新（可通过 `confirm_settings_update` 禁用）
+
+**配置项**：
+```yaml
+settings:
+  confirm_settings_update: true  # 设置为 false 可跳过确认（CI/CD 用）
+```
+
+**跳过确认的快捷命令**：
+- `task sync-force` - 同步配置不询问
+- `task deploy-force` - 完整部署不询问
 
 ### 修改配置流程
 
 1. **修改变量**：编辑 `inventory/default/group_vars/all/settings.yml`
-2. **测试渲染**：运行 `ansible-playbook playbooks/setup.yml --tags sync_config --check --diff`
-3. **执行同步**：运行 `ansible-playbook playbooks/setup.yml --tags sync_config`
-4. **验证结果**：检查 `~/.claude/settings.json` 和相关文件
+2. **测试渲染**：运行 `task check-sync`（或 `ansible-playbook playbooks/setup.yml --tags sync_config --check --diff`）
+3. **执行同步**：运行 `task sync`（或 `ansible-playbook playbooks/setup.yml --tags sync_config`）
+4. **验证结果**：运行 `task view-settings` 检查 `~/.claude/settings.json`
 
 ### 添加新的输出风格
 
