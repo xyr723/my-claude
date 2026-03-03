@@ -33,8 +33,9 @@
   gather_facts: false
 
   vars_files:
-    - "{{ playbook_dir }}/../inventory/default/group_vars/all/settings.yml"
     - "{{ playbook_dir }}/../inventory/default/group_vars/all/secrets.yml"
+    - "{{ playbook_dir }}/../inventory/default/group_vars/all/models.yml"
+    - "{{ playbook_dir }}/../inventory/default/group_vars/all/settings.yml"
 
   vars:
     # 从 settings.yml 读取配置

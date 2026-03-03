@@ -8,6 +8,7 @@ settings:
   alwaysThinkingEnabled: true
   env:
     ANTHROPIC_BASE_URL: "{{ model_configs[use_model].baseURL }}"
+    ANTHROPIC_API_KEY: "{{ model_configs[use_model].api_key }}"
     ANTHROPIC_DEFAULT_OPUS_MODEL: "{{ model_configs[use_model].opus_model }}"
     ANTHROPIC_DEFAULT_SONNET_MODEL: "{{ model_configs[use_model].sonnet_model }}"
     ANTHROPIC_DEFAULT_HAIKU_MODEL: "{{ model_configs[use_model].haiku_model }}"

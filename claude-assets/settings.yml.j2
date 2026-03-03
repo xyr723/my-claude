@@ -9,7 +9,6 @@ env:
 {% for key, value in settings.env.items() %}
   {{ key }}: "{{ value }}"
 {% endfor %}
-  ANTHROPIC_API_KEY: "{{ secrets.settings.env.ANTHROPIC_API_KEY }}"
 
 # ===== 模型配置 =====
 model: "{{ settings.model }}"
