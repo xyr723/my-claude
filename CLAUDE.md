@@ -11,11 +11,18 @@
 - **常用任务**：
   - `task deploy` - 完整部署
   - `task sync` - 仅同步配置
+  - `task manage-mcp` - 仅管理自定义 MCP 服务器
   - `task check` - 预览变更
 - **配置同步**：更新 settings.yml 后使用 `task sync` 同步到 `~/.claude/`
 - **配置备份**：同步时自动备份旧配置到 `tmps/backup/settings.json.YYYYMMDD_HHMMSS`
 - **确认机制**：`confirm_settings_update` 变量控制是否需要人工确认更新（true/false）
 - **预览模式**：`task check` / `task check-sync` 使用 Ansible 的 `--check --diff` 模式
+
+### ⚠️ MCP 配置重要提示
+
+- **不要**在 `settings.yml.j2` 或 `settings.json` 中添加 `mcpServers` 配置项（不在官方 schema 中）
+- 使用 `claude mcp add-json` 命令管理自定义 MCP 服务器
+- `custom_mcp_servers` 变量与 `settings` 平级，不在 `settings` 内部
 
 ---
 
@@ -208,6 +215,7 @@ task list-tags
 | `task deploy`          | 完整部署（安装插件 + 同步配置）  |
 | `task sync`            | 仅同步配置                       |
 | `task install-plugins` | 仅安装插件                       |
+| `task manage-mcp`      | 仅管理自定义 MCP 服务器          |
 | `task check`           | 预览完整部署变更（不执行）       |
 | `task check-sync`      | 预览配置同步变更（不执行）       |
 | `task sync-force`      | 同步配置，跳过确认（CI/CD 用）   |
@@ -487,51 +495,68 @@ claude plugin list
 #### 什么是自定义 MCP 服务器？
 
 - **Claude 插件**：通过 `claude plugin install` 安装，由官方市场提供，插件内部包含 `.mcp.json` 定义
-- **自定义 MCP 服务器**：不在官方市场，需要手动在 `settings.json` 中配置启动命令和参数
+- **自定义 MCP 服务器**：不在官方市场，使用 `claude mcp add-json` 命令管理
+
+#### ⚠️ 重要注意事项
+
+- **不要**在 `settings.json` 中配置 `mcpServers`（该配置项不在官方 schema 中）
+- MCP 配置使用 `claude mcp` 命令管理，或通过项目根目录 `.mcp.json`（项目级别）或 `~/.claude.json`（用户级别）
 
 #### 添加自定义 MCP 服务器
 
 1. 编辑 `inventory/default/group_vars/all/settings.yml`
-2. 在 `custom_mcp_servers` 列表中添加服务器定义：
+2. 在 `custom_mcp_servers` 列表中添加服务器定义（与 `settings` 平级）：
 
    ```yaml
-   settings:
-     custom_mcp_servers:
-       - name: "my-custom-mcp"
-         command: "python"
-         args:
-           - "/path/to/server.py"
-         env:
-           API_KEY: "your-api-key"
+   mcp_scope: "user"  # 配置作用域：local/project/user
+   custom_mcp_servers:
+     - name: "my-custom-mcp"
+       type: "stdio"  # 可选，默认 stdio
+       command: "python"
+       args:
+         - "/path/to/server.py"
+       env:
+         API_KEY: "your-api-key"
    ```
 
-3. 运行 `ansible-playbook playbooks/setup.yml --tags sync_config`
+3. 运行 `task manage-mcp` 或 `uv run ansible-playbook playbooks/setup.yml --tags manage_mcp_servers`
 
 #### 配置说明
 
-- `name`：MCP 服务器名称（在 Claude 中显示）
+**通用参数**：
+- `name`：MCP 服务器名称（唯一标识）
+- `type`：服务器类型（`stdio`/`http`/`sse`，默认 `stdio`）
+
+**stdio 类型参数**：
 - `command`：启动命令（如 python、node、npx、uvx）
 - `args`：命令参数（数组格式）
-- `env`：环境变量（可选，支持从 secrets.yml 引用敏感信息）
+- `env`：环境变量（可选，支持从 secrets.yml 引用）
+
+**http/sse 类型参数**：
+- `url`：服务器 URL
+- `headers`：HTTP 请求头（用于认证）
 
 #### 示例配置
 
-**Python MCP 服务器**：
+**Python MCP 服务器（stdio）**：
 
 ```yaml
 custom_mcp_servers:
   - name: "python-mcp"
+    type: "stdio"
     command: "python"
     args: ["/home/user/mcp-server/server.py"]
 ```
 
-**Node.js MCP 服务器**：
+**HTTP MCP 服务器**：
 
 ```yaml
 custom_mcp_servers:
-  - name: "node-mcp"
-    command: "node"
-    args: ["/home/user/mcp-server/index.js"]
+  - name: "remote-api"
+    type: "http"
+    url: "https://mcp.example.com/api"
+    headers:
+      Authorization: "Bearer {{ secrets.remote_mcp_api_key }}"
 ```
 
 **通过 npx 启动**：
@@ -557,6 +582,19 @@ custom_mcp_servers:
 # secrets.yml
 secrets:
   custom_mcp_api_key: "your-secret-key-here"
+```
+
+#### Claude Code MCP 常用命令
+
+```bash
+# 列出已配置的 MCP 服务器
+claude mcp list
+
+# 使用 JSON 添加 MCP 服务器
+claude mcp add-json --scope user my-server '{"type":"stdio","command":"npx","args":["server"]}'
+
+# 移除 MCP 服务器
+claude mcp remove my-server
 ```
 
 ---
