@@ -84,13 +84,13 @@ jobs:
             API_KEY="${{ secrets.ANTHROPIC_API_KEY }}"
           fi
 
-          # 创建 secrets.yml
+          # 创建 secrets.yml（新结构）
           cat > inventory/default/group_vars/all/secrets.yml << EOF
           ---
           secrets:
-            settings:
-              env:
-                ANTHROPIC_API_KEY: "$API_KEY"
+            api_keys:
+              volces: "$API_KEY"
+              qiniu_claude: "$API_KEY"
           EOF
 
           echo "✓ Secrets configured"
