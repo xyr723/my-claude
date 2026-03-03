@@ -117,7 +117,7 @@ jobs:
       # 导致后续读取文件的任务失败
       - name: 🚀 Deploy - sync Claude configuration
         run: |
-          uv run ansible-playbook playbooks/setup.yml --skip-tags install_plugins,verify
+          uv run ansible-playbook playbooks/setup.yml --skip-tags install_plugins,verify -e "settings.confirm_settings_update=false"
           echo "✓ Configuration synced successfully"
 
       - name: 🔍 Verify deployment
