@@ -162,6 +162,7 @@ ls -la ~/.claude/output-styles/
 ### 主要命令（推荐使用 Taskfile）
 
 **安装 Taskfile**：
+
 ```bash
 # 方式 1: 使用 Go 安装
 go install github.com/go-task/task/v3/cmd/task@latest
@@ -173,6 +174,7 @@ brew install go-task
 ```
 
 **使用 Taskfile**：
+
 ```bash
 # 查看所有可用任务
 task --list
@@ -201,20 +203,21 @@ task list-tags
 
 **Taskfile 任务列表**：
 
-| 任务 | 说明 |
-|------|------|
-| `task deploy` | 完整部署（安装插件 + 同步配置） |
-| `task sync` | 仅同步配置 |
-| `task install-plugins` | 仅安装插件 |
-| `task check` | 预览完整部署变更（不执行） |
-| `task check-sync` | 预览配置同步变更（不执行） |
-| `task sync-force` | 同步配置，跳过确认（CI/CD 用） |
-| `task deploy-force` | 完整部署，跳过确认（CI/CD 用） |
-| `task list-tags` | 查看所有可用 tags |
-| `task list-tasks` | 查看所有 Ansible 任务 |
-| `task view-settings` | 查看当前 ~/.claude/settings.json |
+| 任务                   | 说明                             |
+| ---------------------- | -------------------------------- |
+| `task deploy`          | 完整部署（安装插件 + 同步配置）  |
+| `task sync`            | 仅同步配置                       |
+| `task install-plugins` | 仅安装插件                       |
+| `task check`           | 预览完整部署变更（不执行）       |
+| `task check-sync`      | 预览配置同步变更（不执行）       |
+| `task sync-force`      | 同步配置，跳过确认（CI/CD 用）   |
+| `task deploy-force`    | 完整部署，跳过确认（CI/CD 用）   |
+| `task list-tags`       | 查看所有可用 tags                |
+| `task list-tasks`      | 查看所有 Ansible 任务            |
+| `task view-settings`   | 查看当前 ~/.claude/settings.json |
 
 **说明**：
+
 - 日常使用推荐 `Taskfile` 方式
 - CI/CD 环境使用带 `-force` 后缀的任务跳过确认
 - 原始 ansible-playbook 命令仍然可用
@@ -229,12 +232,14 @@ task list-tags
 4. **二次确认**：人工确认后才执行更新（可通过 `confirm_settings_update` 禁用）
 
 **配置项**：
+
 ```yaml
 settings:
-  confirm_settings_update: true  # 设置为 false 可跳过确认（CI/CD 用）
+  confirm_settings_update: true # 设置为 false 可跳过确认（CI/CD 用）
 ```
 
 **跳过确认的快捷命令**：
+
 - `task sync-force` - 同步配置不询问
 - `task deploy-force` - 完整部署不询问
 
