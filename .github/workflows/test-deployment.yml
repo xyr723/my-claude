@@ -117,7 +117,10 @@ jobs:
       # 导致后续读取文件的任务失败
       - name: 🚀 Deploy - sync Claude configuration
         run: |
-          uv run ansible-playbook playbooks/setup.yml --skip-tags install_plugins,verify -e "settings.confirm_settings_update=false"
+          # 运行 playbook，跳过插件安装、验证和 MCP 管理
+          # 通过在运行前修改 settings.yml 来禁用确认
+          sed -i 's/confirm_settings_update: true/confirm_settings_update: false/' inventory/default/group_vars/all/settings.yml
+          uv run ansible-playbook playbooks/setup.yml --skip-tags install_plugins,verify,manage_mcp_servers
           echo "✓ Configuration synced successfully"
 
       - name: 🔍 Verify deployment
