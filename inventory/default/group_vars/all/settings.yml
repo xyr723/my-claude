@@ -109,6 +109,9 @@ custom_mcp_servers:
   - name: "mcp-server-fetch"
     command: "uvx"
     args: ["mcp-server-fetch"]
+  - name: "deepwiki"
+    type: "http"
+    url: "https://mcp.deepwiki.com/mcp"
 # 示例配置：
 # custom_mcp_servers:
 #   # stdio 类型示例
