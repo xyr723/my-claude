@@ -93,6 +93,7 @@
           - ccline：已安装
           - 插件数量：{{ plugins_to_install | length }} 个
           - 配置文件：~/.claude/settings.json
+          - MCP 配置：{% if settings.custom_mcp_servers is defined and settings.custom_mcp_servers | length > 0 %}~/.claude/.mcp.json ({{ settings.custom_mcp_servers | length }} 个服务器){% else %}(未配置){% endif %}
           - 输出风格：{{ settings.outputStyle }}
 
           已启用的插件：
