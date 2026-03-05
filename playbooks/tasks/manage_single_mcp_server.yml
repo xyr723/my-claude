@@ -4,7 +4,7 @@
 - name: "确定 MCP 服务器类型"
   set_fact:
     mcp_server_type: "{{ mcp_server.type | default('stdio') }}"
-    mcp_scope: "{{ mcp_scope | default('local') }}"
+    mcp_scope: "user"
 
 - name: "构建 stdio 类型 MCP 配置"
   set_fact:

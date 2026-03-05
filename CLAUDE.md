@@ -17,6 +17,8 @@
 - **配置备份**：同步时自动备份旧配置到 `tmps/backup/settings.json.YYYYMMDD_HHMMSS`
 - **确认机制**：`confirm_settings_update` 变量控制是否需要人工确认更新（true/false）
 - **预览模式**：`task check` / `task check-sync` 使用 Ansible 的 `--check --diff` 模式
+- **Skills 目录结构**：自定义 skills 位于 `claude-assets/skills/`，每个 skill 在独立子目录中，文件名为 `SKILL.md`
+- **Skill 命名规范**：front-matter 必须包含 `name:` 字段，部分 skills 使用 `ms-` 前缀（如 ms-git-commit）
 
 ### ⚠️ MCP 配置重要提示
 
@@ -267,20 +269,21 @@ settings:
 
 ### 添加新的自定义命令
 
-1. 在 `claude-assets/skills/mc/` 创建新的 `.md` 文件
+1. 在 `claude-assets/skills/<skill-name>/` 创建目录，添加 `SKILL.md` 文件
 2. 按照 Claude 命令规范编写 front-matter 和指令内容
 3. 运行同步命令：`ansible-playbook playbooks/setup.yml --tags sync_config`
-4. 使用命令：`/your-command-name`
+4. 使用命令：`/<skill-name>`
 
 **Front-matter 必需字段**：
 
 ```yaml
+name: skill-name
 description: 命令的简短描述（一句话）
 allowed-tools: 允许使用的工具列表（如 Read(**), Bash(**)）
 argument-hint: 参数提示（如 [--option] <required>）
 ```
 
-**示例**：参考现有命令 `claude-assets/skills/mc/git-commit.md` 或 `git-sync-branch.md`
+**示例**：参考现有 skills `claude-assets/skills/ms-git-commit/SKILL.md` 等
 
 ### 常见问题排查
 
@@ -394,11 +397,11 @@ uv run ansible-playbook playbooks/setup.yml --tags sync_config --check --diff
 
 ## AI 使用指引
 
-### 自定义命令
+### 自定义 Skills
 
 本项目提供以下自定义命令：
 
-- `/git-commit [--emoji] [--no-verify]`：智能分析 Git 改动并生成 Conventional Commits 风格的提交信息
+- `/ms-git-commit [--emoji] [--no-verify]`：智能分析 Git 改动并生成 Conventional Commits 风格的提交信息
 - `/init-project <项目摘要>`：初始化项目 AI 上下文，生成根级与模块级 CLAUDE.md 索引
 
 ### 自定义智能体
@@ -508,7 +511,6 @@ claude plugin list
 2. 在 `custom_mcp_servers` 列表中添加服务器定义（与 `settings` 平级）：
 
    ```yaml
-   mcp_scope: "user" # 配置作用域：local/project/user
    custom_mcp_servers:
      - name: "my-custom-mcp"
        type: "stdio" # 可选，默认 stdio

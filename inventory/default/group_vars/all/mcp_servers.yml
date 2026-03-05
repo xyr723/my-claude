@@ -1,11 +1,7 @@
 # ===== 自定义 MCP 服务器配置（非插件市场） =====
 # 用于配置非插件市场的自定义 MCP 服务器
 # 使用 claude mcp add-json 命令进行管理
-# mcp_scope: MCP 配置的作用域（local/project/user）
-#   - local: 仅当前项目可用（默认）
-#   - project: 项目级别，提交到版本控制
-#   - user: 用户级别，所有项目可用
-mcp_scope: "user"
+# 配置作用域固定为 user（用户级别，所有项目可用）
 # 格式（stdio 类型）：
 #   - name: 服务器名称（唯一标识）
 #     type: "stdio"（可选，默认 stdio）
@@ -20,26 +16,11 @@ mcp_scope: "user"
 #       Authorization: "Bearer your-token"
 #       X-API-Key: "your-api-key"
 custom_mcp_servers:
+  # 用于自动获取网络内容，并转换成Markdown格式给Agent
   - name: "mcp-server-fetch"
     command: "uvx"
     args: ["mcp-server-fetch"]
+  # 用于自动联网搜索开源仓库信息
   - name: "deepwiki"
     type: "http"
     url: "https://mcp.deepwiki.com/mcp"
-# 示例配置：
-# custom_mcp_servers:
-#   # stdio 类型示例
-#   - name: "custom-python-mcp"
-#     type: "stdio"
-#     command: "python"
-#     args:
-#       - "/path/to/custom-mcp/server.py"
-#     env:
-#       API_KEY: "{{ secrets.custom_mcp_api_key }}"
-#   # HTTP 类型示例
-#   - name: "remote-api"
-#     type: "http"
-#     url: "https://mcp.example.com/api"
-#     headers:
-#       Authorization: "Bearer {{ secrets.remote_mcp_api_key }}"
-#       - "/home/user/mcp-server/index.js"
