@@ -2,6 +2,19 @@
 
 总是使用中文回答
 
+## 开发规范
+
+详细的开发规范位于 `~/.claude/rules/` 目录：
+
+| 文件 | 说明 |
+|------|------|
+| `workflows.md` | 开发工作流、问题排查流程、代码审查清单 |
+| `code-style.md` | 前端/后端/移动端/游戏开发代码风格 |
+| `git.md` | Git 提交规范、分支策略 |
+| `preferences.md` | 编码偏好（语言、类型系统、命名、注释等） |
+| `ios.md` | iOS 开发规范（Swift/SwiftUI） |
+| `android.md` | Android 开发规范（Kotlin/Compose） |
+
 ## 工具使用约定
 
 - 网络搜索：优先使用 `mcp__open-websearch__search` 工具替代 `WebSearch` 工具

@@ -165,6 +165,14 @@
     dest: ~/.claude/CLAUDE.md
     mode: "0644"
 
+- name: 同步 rules 目录
+  synchronize:
+    src: "{{ playbook_dir }}/../claude-assets/rules/"
+    dest: ~/.claude/rules/
+    delete: true
+    recursive: true
+  delegate_to: localhost
+
 - name: 显示配置同步完成信息
   debug:
     msg: "✓ 配置同步完成"

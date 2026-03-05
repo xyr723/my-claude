@@ -76,6 +76,7 @@ my-claude/
 │   ├── agents/          # 自定义智能体定义
 │   ├── skills/        # 自定义命令定义
 │   ├── output-styles/   # 输出风格定义
+│   ├── rules/          # 开发规范文件
 │   ├── CLAUDE.md        # 全局指令文档
 │   └── settings.yml.j2  # settings.json 的 Jinja2 模板
 ├── inventory/           # Ansible 清单与变量
@@ -97,7 +98,7 @@ my-claude/
 1. 在 `inventory/default/group_vars/all/settings.yml` 中声明配置变量
 2. Ansible 读取变量并渲染 `claude-assets/settings.yml.j2` 模板
 3. 将渲染结果转换为 JSON 格式输出到 `~/.claude/settings.json`
-4. 使用 rsync 同步 `skills`、`output-styles`、`CLAUDE.md` 等资源文件到 `~/.claude/`
+4. 使用 rsync 同步 `skills`、`output-styles`、`rules`、`CLAUDE.md` 等资源文件到 `~/.claude/`
 
 ---
 
@@ -109,6 +110,7 @@ my-claude/
 | `claude-assets/skills/`        | 自定义命令定义（Markdown 格式）                           | `git-commit.md`, `git-sync-branch.md`, `init-project.md` |
 | `claude-assets/agents/`        | 自定义智能体定义（子 Agent）                              | `init-architect.md`, `get-current-datetime.md`           |
 | `claude-assets/output-styles/` | 个性化输出风格定义（人格化）                              | `nekomata-engineer.md`, `laowang-engineer.md` 等         |
+| `claude-assets/rules/`         | 开发规范文件（工作流、代码风格、Git 规范等）              | `workflows.md`, `code-style.md`, `git.md` 等            |
 | `inventory/`                   | Ansible 清单与变量管理                                    | `inventory.yml`, `settings.yml`, `secrets.yml`           |
 | `playbooks/`                   | Ansible Playbook 剧本                                     | `setup.yml`（通过 tags 控制执行阶段）                    |
 
