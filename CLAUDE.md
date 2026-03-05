@@ -11,20 +11,33 @@
 - **常用任务**：
   - `task deploy` - 完整部署
   - `task sync` - 仅同步配置
-  - `task manage-mcp` - 仅管理自定义 MCP 服务器
-  - `task check` - 预览变更
+  - `task sync-claude-json` - 仅同步 ~/.claude.json（deep merge 模式）
+  - `task check-claude-json` - 预览 claude.json 变更
+  - `task check` - 预览完整变更
 - **配置同步**：更新 settings.yml 后使用 `task sync` 同步到 `~/.claude/`
-- **配置备份**：同步时自动备份旧配置到 `tmps/backup/settings.json.YYYYMMDD_HHMMSS`
-- **确认机制**：`confirm_settings_update` 变量控制是否需要人工确认更新（true/false）
+- **配置备份**：同步时自动备份旧配置到 `tmps/backup/` 目录，格式：`settings.json.YYYYMMDD_HHMMSS`、`claude.json.YYYYMMDD_HHMMSS`
+- **确认机制**：`confirm_settings_update` 控制 settings.json 更新，`claude_json.confirm_claude_json_update` 控制 claude.json 更新；使用 `skip_confirm=true` 可跳过所有确认（CI/CD 用）
 - **预览模式**：`task check` / `task check-sync` 使用 Ansible 的 `--check --diff` 模式
+- **Playbook 语法检查**：使用 `uv run ansible-playbook --syntax-check` 验证 Playbook 语法
+- **模板渲染测试**：使用 `uv run ansible -m template` 快速验证单模板渲染
+- **深度合并语法**：使用 `jq -s '.[0] * .[1]'` 递归合并 JSON 文件
+- **配置搜索**：使用 `grep -r --include="*.yml" --include="*.j2" --include="*.yaml"` 搜索项目配置
+
+### 注意事项
+
+- **--check 模式限制**：`--check` 模式下 template 模块不会创建文件，依赖文件的任务可能失败
+- **变量覆盖风险**：使用 `-e '{"key": {"subkey": "value"}}'` 格式会**完全覆盖**原变量
+- **正确的变量传递**：使用顶层变量（如 `skip_confirm=true`）避免嵌套变量覆盖问题
 - **Skills 目录结构**：自定义 skills 位于 `claude-assets/skills/`，每个 skill 在独立子目录中，文件名为 `SKILL.md`
 - **Skill 命名规范**：front-matter 必须包含 `name:` 字段，部分 skills 使用 `ms-` 前缀（如 ms-git-commit）
+- **项目级 Skills**：项目根目录的 `.claude/skills/` 用于存放仅在当前项目中使用的 skills，不会被同步到 `~/.claude/`
+- **.gitignore 注意**：仅忽略 `.claude/settings.local.json`，不要忽略整个 `.claude/` 目录（项目级 skills 存放在这里）
 
 ### ⚠️ MCP 配置重要提示
 
 - **不要**在 `settings.yml.j2` 或 `settings.json` 中添加 `mcpServers` 配置项（不在官方 schema 中）
-- 使用 `claude mcp add-json` 命令管理自定义 MCP 服务器
-- `custom_mcp_servers` 变量与 `settings` 平级，不在 `settings` 内部
+- 使用 `claude_json.mcpServers` 变量（在 `inventory/default/group_vars/all/mcp_servers.yml` 中定义）管理自定义 MCP 服务器
+- 配置通过 `claude-assets/claude.yml.j2` 模板渲染后与 `~/.claude.json` 做递归深度合并（`jq deep merge`）
 
 ---
 
@@ -212,19 +225,21 @@ task list-tags
 
 **Taskfile 任务列表**：
 
-| 任务                   | 说明                             |
-| ---------------------- | -------------------------------- |
-| `task deploy`          | 完整部署（安装插件 + 同步配置）  |
-| `task sync`            | 仅同步配置                       |
-| `task install-plugins` | 仅安装插件                       |
-| `task manage-mcp`      | 仅管理自定义 MCP 服务器          |
-| `task check`           | 预览完整部署变更（不执行）       |
-| `task check-sync`      | 预览配置同步变更（不执行）       |
-| `task sync-force`      | 同步配置，跳过确认（CI/CD 用）   |
-| `task deploy-force`    | 完整部署，跳过确认（CI/CD 用）   |
-| `task list-tags`       | 查看所有可用 tags                |
-| `task list-tasks`      | 查看所有 Ansible 任务            |
-| `task view-settings`   | 查看当前 ~/.claude/settings.json |
+| 任务                     | 说明                              |
+| ------------------------ | --------------------------------- |
+| `task deploy`            | 完整部署（安装插件 + 同步配置）   |
+| `task sync`              | 仅同步配置                        |
+| `task install-plugins`   | 仅安装插件                        |
+| `task sync-claude-json`  | 仅同步 claude.json（deep merge）  |
+| `task check-claude-json` | 预览 claude.json 变更（不执行）   |
+| `task check`             | 预览完整部署变更（不执行）        |
+| `task check-sync`        | 预览配置同步变更（不执行）        |
+| `task sync-force`        | 同步配置，跳过确认（CI/CD 用）    |
+| `task deploy-force`      | 完整部署，跳过确认（CI/CD 用）    |
+| `task list-tags`         | 查看所有可用 tags                 |
+| `task list-tasks`        | 查看所有 Ansible 任务             |
+| `task view-settings`     | 查看当前 ~/.claude/settings.json  |
+| `task view-claude-json`  | 查看当前 ~/.claude.json（格式化） |
 
 **说明**：
 
@@ -403,6 +418,7 @@ uv run ansible-playbook playbooks/setup.yml --tags sync_config --check --diff
 
 - `/ms-git-commit [--emoji] [--no-verify]`：智能分析 Git 改动并生成 Conventional Commits 风格的提交信息
 - `/init-project <项目摘要>`：初始化项目 AI 上下文，生成根级与模块级 CLAUDE.md 索引
+- `/my-claude-sync-upstream`：专门用于 my-claude 项目从上游仓库一键同步更新，自动检测并添加 upstream remote，处理配置迁移
 
 ### 自定义智能体
 
@@ -511,17 +527,19 @@ claude plugin list
 2. 在 `custom_mcp_servers` 列表中添加服务器定义（与 `settings` 平级）：
 
    ```yaml
-   custom_mcp_servers:
-     - name: "my-custom-mcp"
-       type: "stdio" # 可选，默认 stdio
-       command: "python"
-       args:
-         - "/path/to/server.py"
-       env:
-         API_KEY: "your-api-key"
+   claude_json:
+     # 同步控制（可选，默认 true）
+     confirm_claude_json_update: true
+     mcpServers:
+       my-custom-mcp:
+         type: "stdio" # 可选，默认 stdio
+         command: "python"
+         args: ["/path/to/server.py"]
+         env:
+           API_KEY: "your-api-key"
    ```
 
-3. 运行 `task manage-mcp` 或 `uv run ansible-playbook playbooks/setup.yml --tags manage_mcp_servers`
+3. 运行 `task sync-claude-json` 或 `uv run ansible-playbook playbooks/setup.yml --tags sync_claude_json`
 
 #### 配置说明
 
