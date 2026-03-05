@@ -107,13 +107,13 @@
       备份文件：tmps/backup/claude.json.{{ timestamp.stdout }}
 
       是否继续？(yes/no)
-  when: claude_json_diff.stdout != "" and claude_json.confirm_claude_json_update | default(true) | bool
+  when: claude_json_diff.stdout != "" and (claude_json.confirm_claude_json_update | default(true) | bool) and not (skip_confirm | default(false) | bool)
   register: user_confirmation
 
 - name: 确认用户选择
   fail:
     msg: "用户取消了 claude.json 更新"
-  when: claude_json_diff.stdout != "" and claude_json.confirm_claude_json_update | default(true) | bool and user_confirmation.user_input != "yes" and user_confirmation.user_input != "y"
+  when: claude_json_diff.stdout != "" and (claude_json.confirm_claude_json_update | default(true) | bool) and not (skip_confirm | default(false) | bool) and user_confirmation.user_input != "yes" and user_confirmation.user_input != "y"
 
 - name: 更新 ~/.claude.json
   copy:

@@ -120,13 +120,13 @@
       备份文件：{% if timestamp.stdout is defined %}tmps/backup/settings.json.{{ timestamp.stdout }}{% else %}（无需备份）{% endif %}
 
       是否继续？(yes/no)
-  when: settings_diff.stdout != "" and settings.confirm_settings_update | default(true) | bool
+  when: settings_diff.stdout != "" and (settings.confirm_settings_update | default(true) | bool) and not (skip_confirm | default(false) | bool)
   register: user_confirmation
 
 - name: 确认用户选择
   fail:
     msg: "用户取消了配置更新"
-  when: settings_diff.stdout != "" and settings.confirm_settings_update | default(true) | bool and user_confirmation.user_input != "yes" and user_confirmation.user_input != "y"
+  when: settings_diff.stdout != "" and (settings.confirm_settings_update | default(true) | bool) and not (skip_confirm | default(false) | bool) and user_confirmation.user_input != "yes" and user_confirmation.user_input != "y"
 
 - name: 更新 settings.json
   copy:
