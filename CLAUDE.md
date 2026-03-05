@@ -223,21 +223,21 @@ task list-tags
 
 **Taskfile 任务列表**：
 
-| 任务                   | 说明                             |
-| ---------------------- | -------------------------------- |
-| `task deploy`          | 完整部署（安装插件 + 同步配置）  |
-| `task sync`            | 仅同步配置                       |
-| `task install-plugins` | 仅安装插件                       |
-| `task sync-claude-json`| 仅同步 claude.json（deep merge） |
-| `task check-claude-json`| 预览 claude.json 变更（不执行）|
-| `task check`           | 预览完整部署变更（不执行）       |
-| `task check-sync`      | 预览配置同步变更（不执行）       |
-| `task sync-force`      | 同步配置，跳过确认（CI/CD 用）   |
-| `task deploy-force`    | 完整部署，跳过确认（CI/CD 用）   |
-| `task list-tags`       | 查看所有可用 tags                |
-| `task list-tasks`      | 查看所有 Ansible 任务            |
-| `task view-settings`   | 查看当前 ~/.claude/settings.json |
-| `task view-claude-json`| 查看当前 ~/.claude.json（格式化）|
+| 任务                     | 说明                              |
+| ------------------------ | --------------------------------- |
+| `task deploy`            | 完整部署（安装插件 + 同步配置）   |
+| `task sync`              | 仅同步配置                        |
+| `task install-plugins`   | 仅安装插件                        |
+| `task sync-claude-json`  | 仅同步 claude.json（deep merge）  |
+| `task check-claude-json` | 预览 claude.json 变更（不执行）   |
+| `task check`             | 预览完整部署变更（不执行）        |
+| `task check-sync`        | 预览配置同步变更（不执行）        |
+| `task sync-force`        | 同步配置，跳过确认（CI/CD 用）    |
+| `task deploy-force`      | 完整部署，跳过确认（CI/CD 用）    |
+| `task list-tags`         | 查看所有可用 tags                 |
+| `task list-tasks`        | 查看所有 Ansible 任务             |
+| `task view-settings`     | 查看当前 ~/.claude/settings.json  |
+| `task view-claude-json`  | 查看当前 ~/.claude.json（格式化） |
 
 **说明**：
 
