@@ -13,3 +13,5 @@ inventory/**/secrets.yaml
 .env
 .env.local
 docs/plans
+
+__pycache__

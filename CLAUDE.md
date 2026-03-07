@@ -6,6 +6,16 @@
 
 ## 开发约定（AI 助手必读）
 
+### my-claude CLI 工具
+
+- **定位**：基于 Typer 的 Python CLI，是 Ansible 配置管理的用户友好前端
+- **源码**：`my_claude/` 包，入口 `my_claude/cli.py`，pyproject.toml 注册为 `my-claude` 命令
+- **安装**：`uv tool install -e .`（全局）或 `uv pip install -e .`（开发）
+- **核心命令**：`my-claude status`（查看状态）、`my-claude provider use <name>`（切换提供商）、`my-claude sync`（同步配置）
+- **工作流**：CLI 修改 `inventory/` 下的 YAML → 可选 `--sync` 自动调用 `task sync` → Ansible 渲染并部署到 `~/.claude/`
+- **技术栈**：Typer（CLI 框架）、Rich（终端 UI）、ruamel.yaml（保留注释的 YAML 读写）
+- **Typer 注意**：所有 `typer.Typer()` 实例须传 `context_settings={"help_option_names": ["-h", "--help"]}` 以支持 `-h` 短选项
+
 - **Python 命令前缀**：所有 Python/Ansible 命令必须使用 `uv run` 前缀（如 `uv run ansible-playbook`）
 - **任务管理**：使用 `Taskfile.yml` 统一管理所有任务，运行 `task --list` 查看可用任务
 - **常用任务**：
@@ -105,6 +115,7 @@ my-claude/
 
 | 模块路径                       | 职责                                                      | 关键文件                                                 |
 | ------------------------------ | --------------------------------------------------------- | -------------------------------------------------------- |
+| `my_claude/`                   | Python CLI 工具，Ansible 配置管理的命令行前端              | `cli.py`, `config.py`, `models.py`, `sync.py`           |
 | `claude-assets/`               | Claude 配置资源仓库，包含模板、命令、智能体、输出风格定义 | `settings.yml.j2`, `CLAUDE.md`                           |
 | `claude-assets/skills/`        | 自定义命令定义（Markdown 格式）                           | `git-commit.md`, `git-sync-branch.md`, `init-project.md` |
 | `claude-assets/agents/`        | 自定义智能体定义（子 Agent）                              | `init-architect.md`, `get-current-datetime.md`           |
