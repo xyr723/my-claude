@@ -129,9 +129,10 @@ my-claude/
 
 ### 前置条件
 
+- Claude CLI（需用户预先安装；未安装时 `setup.yml` 会提示并停止）
 - Python 3.8+
 - Ansible 2.9+（推荐通过 uv 管理）
-- Node.js 18+（用于安装 Claude CLI）
+- Node.js 18+（用于安装 ccline）
 
 **命令执行说明**：
 
@@ -145,19 +146,22 @@ my-claude/
 git clone <仓库地址> my-claude
 cd my-claude
 
-# 2. 配置变量
+# 2. 安装 Claude CLI（需用户自行完成）
+curl -fsSL https://claude.ai/install.sh | bash
+
+# 3. 配置变量
 # 编辑 inventory/default/group_vars/all/settings.yml（公开配置）
 vim inventory/default/group_vars/all/settings.yml
 # 编辑 inventory/default/group_vars/all/secrets.yml（敏感信息）
 vim inventory/default/group_vars/all/secrets.yml
 
-# 3. 一键部署（安装插件 + 同步配置）
+# 4. 一键部署（检查 Claude CLI + 安装插件 + 同步配置）
 uv run ansible-playbook playbooks/setup.yml
 ```
 
 **`setup.yml` 会自动执行**：
 
-1. 检查 Claude CLI 是否已安装（未安装会提示）
+1. 检查 Claude CLI 是否已安装（未安装会提示并停止，不自动安装）
 2. 自动安装 `enabled_plugins` 列表中的插件
 3. 同步配置到 `~/.claude/settings.json`
 4. 验证部署结果
@@ -407,6 +411,7 @@ uv run ansible-playbook playbooks/setup.yml --tags sync_config --check --diff
 - 本项目使用**单一入口 playbook**（`setup.yml`）+ tags 控制执行阶段
 - 不要创建独立的 `install_*.yml`，统一通过 `setup.yml --tags <stage>` 执行
 - 可用 tags：`install_cli`、`install_plugins`、`sync_config`、`verify`
+- `install_cli` tag 为兼容保留；当前仅检查 Claude CLI，并在需要时安装 ccline
 - 查看所有 tags：`grep -E '^\s+tags:' playbooks/setup.yml | sort -u`
 
 ### Git 提交规范

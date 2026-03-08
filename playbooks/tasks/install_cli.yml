@@ -1,18 +1,21 @@
 ---
 # playbooks/tasks/install_cli.yml
-# 检查并自动安装 CLI 工具（Claude CLI、ccline）
+# 检查 Claude CLI 前置条件，并确保 ccline 可用
 
 - name: 显示阶段信息
   debug:
     msg: |
       ========================================
-      阶段 1：检查并安装 CLI 工具
+      阶段 1：检查 Claude CLI 前置条件
       ========================================
+      说明：
+      - 本项目不会自动安装 Claude CLI
+      - 如未安装，请先自行执行：curl -fsSL https://claude.ai/install.sh | bash
 
 # --- Claude CLI ---
 
-- name: 检查 Claude CLI 是否已安装
-  shell: which claude
+- name: 检查 Claude CLI 是否在 PATH 中
+  shell: command -v claude
   register: claude_check
   changed_when: false
   failed_when: false
@@ -21,55 +24,23 @@
   command: claude --version
   register: claude_version
   changed_when: false
+  failed_when: false
   when: claude_check.rc == 0
 
 - name: 显示 Claude CLI 状态
   debug:
-    msg: "✓ Claude CLI 已安装：{{ claude_version.stdout | default('') }}"
-  when: claude_check.rc == 0
-
-- name: 检查是否存在 npm 安装的 Claude CLI
-  shell: npm list -g @anthropic-ai/claude-code --depth=0 2>/dev/null | grep -q claude-code
-  register: claude_npm_check
-  changed_when: false
-  failed_when: false
-
-- name: 卸载 npm 安装的 Claude CLI
-  npm:
-    name: "@anthropic-ai/claude-code"
-    global: true
-    state: absent
-  when: claude_npm_check.rc == 0
-
-- name: 显示 npm 版本已卸载
-  debug:
-    msg: "✓ 已卸载 npm 安装的 Claude CLI，将切换到原生安装方式"
-  when: claude_npm_check.rc == 0
-
-- name: 安装 Claude CLI（原生安装方式）
-  shell: curl -fsSL https://claude.ai/install.sh | bash
-  when: claude_check.rc != 0 or claude_npm_check.rc == 0
-
-- name: 验证 Claude CLI 安装
-  command: claude --version
-  register: claude_install_version
-  changed_when: false
-  failed_when: false
-  when: claude_check.rc != 0 or claude_npm_check.rc == 0
-
-- name: 显示 Claude CLI 安装结果
-  debug:
-    msg: "✓ Claude CLI 安装成功（原生安装）：{{ claude_install_version.stdout | default('') }}"
+    msg: "✓ Claude CLI 可用：{{ claude_check.stdout }}（{{ claude_version.stdout | default('unknown version') }}）"
   when:
-    - claude_check.rc != 0 or claude_npm_check.rc == 0
-    - claude_install_version.rc == 0
+    - claude_check.rc == 0
+    - claude_version.rc == 0
 
-- name: 终止部署（Claude CLI 安装失败）
+- name: 终止部署（Claude CLI 缺失或不可用）
   fail:
-    msg: "Claude CLI 安装失败，无法继续部署。请手动安装：curl -fsSL https://claude.ai/install.sh | bash"
-  when:
-    - claude_check.rc != 0 or claude_npm_check.rc == 0
-    - claude_install_version.rc != 0
+    msg: |
+      未检测到可用的 Claude CLI，无法继续部署。
+      请先自行安装 Claude CLI，例如执行：
+      curl -fsSL https://claude.ai/install.sh | bash
+  when: claude_check.rc != 0 or (claude_version.rc | default(1)) != 0
 
 # --- ccline ---
 
@@ -125,6 +96,6 @@
     msg: |
       ----------------------------------------
       CLI 工具状态：
-      - Claude CLI：{{ claude_version.stdout | default(claude_install_version.stdout | default('已安装')) }}
+      - Claude CLI：{{ claude_version.stdout | default('已通过前置检查') }}
       - ccline：{{ ccline_version.stdout | default(ccline_install_version.stdout | default('已安装')) }}
       ----------------------------------------
