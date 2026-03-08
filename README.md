@@ -30,9 +30,10 @@
 
 ### 前置条件
 
+- Claude CLI（需用户预先安装，例如执行：`curl -fsSL https://claude.ai/install.sh | bash`）
 - Python 3.8+
 - Ansible 2.9+(推荐通过 uv 管理)
-- Node.js 18+(用于安装 Claude CLI)
+- Node.js 18+(用于安装 ccline)
 
 ### 一键部署
 
@@ -41,17 +42,22 @@
 git clone https://github.com/yourusername/my-claude-ansible.git
 cd my-claude-ansible
 
-# 2. 配置敏感信息
+# 2. 安装 Claude CLI（需用户自行完成）
+curl -fsSL https://claude.ai/install.sh | bash
+
+# 3. 配置敏感信息
 cp inventory/default/group_vars/all/secrets.yml.example \
    inventory/default/group_vars/all/secrets.yml
 # 编辑 secrets.yml,填入你的 ANTHROPIC_API_KEY
 
-# 3. 自定义配置(可选)
+# 4. 自定义配置(可选)
 vim inventory/default/group_vars/all/settings.yml
 
-# 4. 一键部署
+# 5. 一键部署
 uv run ansible-playbook playbooks/setup.yml
 ```
+
+部署前请确保 `claude` 命令已经可用；playbook 只负责检查，不会自动安装 Claude CLI。
 
 **部署完成后**:
 
@@ -213,8 +219,8 @@ settings:
 运行部署命令:
 
 ```bash
-uv run ansible-playbook playbooks/install_plugins.yml  # 安装插件
-uv run ansible-playbook playbooks/sync_claude_config.yml  # 同步配置
+uv run ansible-playbook playbooks/setup.yml --tags install_plugins  # 安装插件
+uv run ansible-playbook playbooks/setup.yml --tags sync_config  # 同步配置
 ```
 
 ---
@@ -237,7 +243,7 @@ allowed-tools: Read(**), Write(**)
 命令说明...
 ```
 
-1. 同步配置:`uv run ansible-playbook playbooks/sync_claude_config.yml`
+1. 同步配置:`uv run ansible-playbook playbooks/setup.yml --tags sync_config`
 
 ### 添加输出风格
 

@@ -9,6 +9,16 @@
       阶段 2.5：同步 claude.json（deep merge）
       ========================================
 
+- name: 检测是否为交互式终端
+  shell: |
+    if [ -t 0 ] && [ -t 1 ]; then
+      echo true
+    else
+      echo false
+    fi
+  register: interactive_terminal
+  changed_when: false
+
 - name: 创建备份目录 tmps/backup
   file:
     path: "{{ playbook_dir }}/../tmps/backup"
@@ -96,6 +106,15 @@
       备份已创建：tmps/backup/claude.json.{{ timestamp.stdout }}
   when: claude_json_diff.stdout != ""
 
+- name: 非交互环境下跳过 claude.json 更新确认
+  debug:
+    msg: "检测到非交互终端，跳过 claude.json 更新确认提示"
+  when:
+    - claude_json_diff.stdout != ""
+    - (claude_json.confirm_claude_json_update | default(true) | bool)
+    - not (skip_confirm | default(false) | bool)
+    - interactive_terminal.stdout != "true"
+
 - name: 询问是否继续更新
   pause:
     prompt: |
@@ -107,13 +126,13 @@
       备份文件：tmps/backup/claude.json.{{ timestamp.stdout }}
 
       是否继续？(yes/no)
-  when: claude_json_diff.stdout != "" and (claude_json.confirm_claude_json_update | default(true) | bool) and not (skip_confirm | default(false) | bool)
+  when: claude_json_diff.stdout != "" and (claude_json.confirm_claude_json_update | default(true) | bool) and not (skip_confirm | default(false) | bool) and interactive_terminal.stdout == "true"
   register: user_confirmation
 
 - name: 确认用户选择
   fail:
     msg: "用户取消了 claude.json 更新"
-  when: claude_json_diff.stdout != "" and (claude_json.confirm_claude_json_update | default(true) | bool) and not (skip_confirm | default(false) | bool) and user_confirmation.user_input != "yes" and user_confirmation.user_input != "y"
+  when: claude_json_diff.stdout != "" and (claude_json.confirm_claude_json_update | default(true) | bool) and not (skip_confirm | default(false) | bool) and interactive_terminal.stdout == "true" and user_confirmation.user_input != "yes" and user_confirmation.user_input != "y"
 
 - name: 更新 ~/.claude.json
   copy:

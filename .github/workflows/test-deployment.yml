@@ -61,18 +61,17 @@ jobs:
           echo "✓ Required directories created"
 
       # ========================================
-      # 阶段 2：Node.js 与 Claude CLI
+      # 阶段 2：预装 Claude CLI（playbook 前置条件）
       # ========================================
-      - name: 🟢 Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "18"
-
-      - name: 🤖 Install Claude CLI
+      - name: 🤖 Preinstall Claude CLI
         run: |
-          npm install -g @anthropic-ai/claude-code
+          curl -fsSL https://claude.ai/install.sh | bash
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: 🤖 Verify Claude CLI prerequisite
+        run: |
           claude --version
-          echo "✓ Claude CLI installed successfully"
+          echo "✓ Claude CLI is available before running the playbook"
 
       # ========================================
       # 阶段 3：配置敏感信息
