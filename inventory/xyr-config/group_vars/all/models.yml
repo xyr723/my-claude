@@ -27,13 +27,6 @@ model_configs:
     sonnet_model: "pa/claude-sonnet-4-5-20250929"
     haiku_model: "pa/claude-haiku-4-5-20251001"
     claude_code_subagent: "pa/claude-opus-4-6"
-  jdo_gpt_54:
-    baseURL: https://api.ppinfra.com/openai/v1
-    api_key: "{{ secrets.api_keys.jdo_key }}"
-    opus_model: "pa/gpt-5.4-pro"
-    sonnet_model: "pa/gpt-5.4"
-    haiku_model: "pa/gpt-5.4"
-    claude_code_subagent: "pa/gpt-5.4"
   jdo_gemini_31_pro:
     baseURL: https://api.ppinfra.com
     api_key: "{{ secrets.api_keys.jdo_key }}"
@@ -44,8 +37,7 @@ model_configs:
   
 
 # use_model: "volces_doubao"
-# use_model: "qiniu_claude"
+use_model: "qiniu_claude"
 # use_model: "volces_kimi_k2_5"
-use_model: "jdo_claude"
-# use_model: "jdo_gpt_54"
+# use_model: "jdo_claude"
 # use_model: "jdo_gemini_31_pro"
