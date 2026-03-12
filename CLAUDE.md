@@ -1,6 +1,6 @@
 # my-claude-ansible
 
-> **Claude Code 配置管理仓库** - 基于 Ansible 的声明式配置管理，实现 Claude 个性化配置的自动化部署与同步
+> **Claude Code + Codex CLI 配置管理仓库** - 基于 Ansible 的声明式配置管理，实现 Claude Code 和 Codex CLI 个性化配置的自动化部署与同步
 
 ---
 
@@ -19,14 +19,16 @@
 - **Python 命令前缀**：所有 Python/Ansible 命令必须使用 `uv run` 前缀（如 `uv run ansible-playbook`）
 - **任务管理**：使用 `Taskfile.yml` 统一管理所有任务，运行 `task --list` 查看可用任务
 - **常用任务**：
-  - `task deploy` - 完整部署
-  - `task sync` - 仅同步配置
+  - `task deploy` - 完整部署（Claude + Codex）
+  - `task sync` - 仅同步 Claude 配置
+  - `task sync-codex` - 仅同步 Codex CLI 配置
   - `task sync-claude-json` - 仅同步 ~/.claude.json（deep merge 模式）
   - `task check-claude-json` - 预览 claude.json 变更
+  - `task check-codex` - 预览 Codex 配置变更
   - `task check` - 预览完整变更
 - **配置同步**：更新 settings.yml 后使用 `task sync` 同步到 `~/.claude/`
-- **配置备份**：同步时自动备份旧配置到 `tmps/backup/` 目录，格式：`settings.json.YYYYMMDD_HHMMSS`、`claude.json.YYYYMMDD_HHMMSS`
-- **确认机制**：`confirm_settings_update` 控制 settings.json 更新，`claude_json.confirm_claude_json_update` 控制 claude.json 更新；使用 `skip_confirm=true` 可跳过所有确认（CI/CD 用）
+- **配置备份**：同步时自动备份旧配置到 `tmps/backup/` 目录，格式：`settings.json.YYYYMMDD_HHMMSS`、`claude.json.YYYYMMDD_HHMMSS`、`codex_config.toml.YYYYMMDD_HHMMSS`
+- **确认机制**：`confirm_settings_update` 控制 settings.json 更新，`claude_json.confirm_claude_json_update` 控制 claude.json 更新，`codex_config.confirm_codex_config_update` 控制 config.toml 更新；使用 `skip_confirm=true` 可跳过所有确认（CI/CD 用）
 - **预览模式**：`task check` / `task check-sync` 使用 Ansible 的 `--check --diff` 模式
 - **Playbook 语法检查**：使用 `uv run ansible-playbook --syntax-check` 验证 Playbook 语法
 - **模板渲染测试**：使用 `uv run ansible -m template` 快速验证单模板渲染
@@ -66,13 +68,14 @@
 
 ## 项目愿景
 
-**my-claude-ansible** 旨在提供一个可重复、可版本控制的 Claude Code 配置管理解决方案，通过 Ansible 的基础设施即代码（IaC）理念，实现：
+**my-claude-ansible** 旨在提供一个可重复、可版本控制的 AI CLI 工具配置管理解决方案，通过 Ansible 的基础设施即代码（IaC）理念，实现：
 
 - **声明式配置管理**：使用 YAML 声明期望状态，由 Ansible 自动执行到位
+- **多工具统一管理**：同时管理 Claude Code (`~/.claude/`) 和 Codex CLI (`~/.codex/`) 的配置
 - **个性化输出风格**：支持多种人格化输出风格（猫娘工程师、大小姐工程师、老王工程师等）
 - **自定义命令扩展**：通过 Markdown 定义 Claude 自定义命令（如 git-commit、init-project）
 - **模型配置灵活性**：支持多层级模型配置（Opus、Sonnet、Haiku、子代理模型）
-- **跨环境一致性**：确保开发、测试、生产环境的 Claude 配置一致
+- **跨环境一致性**：确保开发、测试、生产环境的配置一致
 
 ---
 
@@ -89,11 +92,15 @@ my-claude/
 │   ├── rules/          # 开发规范文件
 │   ├── CLAUDE.md        # 全局指令文档
 │   └── settings.yml.j2  # settings.json 的 Jinja2 模板
+├── codex-assets/         # Codex CLI 配置资源
+│   ├── config.toml.j2   # config.toml 的 Jinja2 模板
+│   └── AGENTS.md        # Codex 全局指令文档
 ├── inventory/           # Ansible 清单与变量
 │   └── default/
 │       ├── inventory.yml         # 主机清单
 │       └── group_vars/all/
-│           ├── settings.yml      # 公开配置变量
+│           ├── settings.yml      # Claude 公开配置变量
+│           ├── codex_config.yml  # Codex 配置变量
 │           └── secrets.yml       # 敏感配置（API Key 等）
 ├── playbooks/           # Ansible Playbook
 │   └── setup.yml                # 一键部署（安装插件 + 同步配置）
@@ -109,6 +116,8 @@ my-claude/
 2. Ansible 读取变量并渲染 `claude-assets/settings.yml.j2` 模板
 3. 将渲染结果转换为 JSON 格式输出到 `~/.claude/settings.json`
 4. 使用 rsync 同步 `skills`、`output-styles`、`rules`、`CLAUDE.md` 等资源文件到 `~/.claude/`
+5. 渲染 `codex-assets/config.toml.j2` 模板输出到 `~/.codex/config.toml`
+6. 同步 `codex-assets/AGENTS.md` 到 `~/.codex/AGENTS.md`
 
 ---
 
@@ -122,7 +131,8 @@ my-claude/
 | `claude-assets/agents/`        | 自定义智能体定义（子 Agent）                              | `init-architect.md`, `get-current-datetime.md`           |
 | `claude-assets/output-styles/` | 个性化输出风格定义（人格化）                              | `nekomata-engineer.md`, `laowang-engineer.md` 等         |
 | `claude-assets/rules/`         | 开发规范文件（工作流、代码风格、Git 规范等）              | `workflows.md`, `code-style.md`, `git.md` 等            |
-| `inventory/`                   | Ansible 清单与变量管理                                    | `inventory.yml`, `settings.yml`, `secrets.yml`           |
+| `codex-assets/`                | Codex CLI 配置资源（模板、指令文件）                      | `config.toml.j2`, `AGENTS.md`                            |
+| `inventory/`                   | Ansible 清单与变量管理                                    | `inventory.yml`, `settings.yml`, `codex_config.yml`, `secrets.yml` |
 | `playbooks/`                   | Ansible Playbook 剧本                                     | `setup.yml`（通过 tags 控制执行阶段）                    |
 
 ---
@@ -165,14 +175,18 @@ uv run ansible-playbook playbooks/setup.yml
 
 1. 检查 Claude CLI 是否已安装（未安装会提示并停止，不自动安装）
 2. 自动安装 `enabled_plugins` 列表中的插件
-3. 同步配置到 `~/.claude/settings.json`
-4. 验证部署结果
+3. 同步 Claude 配置到 `~/.claude/settings.json`
+4. 同步 Codex CLI 配置到 `~/.codex/config.toml` 和 `~/.codex/AGENTS.md`
+5. 验证部署结果
 
 ### 常用选项
 
 ```bash
 # 跳过插件安装（仅同步配置）
 uv run ansible-playbook playbooks/setup.yml --tags sync_config
+
+# 仅同步 Codex CLI 配置
+uv run ansible-playbook playbooks/setup.yml --tags sync_codex_config
 
 # 仅安装插件
 uv run ansible-playbook playbooks/setup.yml --tags install_plugins
@@ -184,14 +198,20 @@ uv run ansible-playbook playbooks/setup.yml --check --diff
 ### 验证配置
 
 ```bash
-# 检查 settings.json 是否正确生成
+# 检查 Claude settings.json 是否正确生成
 cat ~/.claude/settings.json | jq .
+
+# 检查 Codex config.toml 是否正确生成
+cat ~/.codex/config.toml
 
 # 检查自定义命令是否同步
 ls -la ~/.claude/skills/
 
 # 检查输出风格是否同步
 ls -la ~/.claude/output-styles/
+
+# 检查 Codex 指令文件是否同步
+cat ~/.codex/AGENTS.md
 ```
 
 ---
@@ -218,11 +238,14 @@ brew install go-task
 # 查看所有可用任务
 task --list
 
-# 一键部署（推荐）
+# 一键部署（推荐，包含 Claude + Codex）
 task deploy
 
-# 同步配置到 ~/.claude（常用）
+# 同步 Claude 配置到 ~/.claude（常用）
 task sync
+
+# 同步 Codex 配置到 ~/.codex
+task sync-codex
 
 # 仅安装插件
 task install-plugins
@@ -230,11 +253,17 @@ task install-plugins
 # 预览配置变更
 task check-sync
 
+# 预览 Codex 配置变更
+task check-codex
+
 # 完整预览变更
 task check
 
 # 查看当前配置
 task view-settings
+
+# 查看 Codex 配置
+task view-codex-config
 
 # 查看所有可用 tags
 task list-tags
@@ -245,18 +274,21 @@ task list-tags
 | 任务                     | 说明                              |
 | ------------------------ | --------------------------------- |
 | `task deploy`            | 完整部署（安装插件 + 同步配置）   |
-| `task sync`              | 仅同步配置                        |
+| `task sync`              | 仅同步 Claude 配置               |
+| `task sync-codex`        | 仅同步 Codex CLI 配置            |
 | `task install-plugins`   | 仅安装插件                        |
 | `task sync-claude-json`  | 仅同步 claude.json（deep merge）  |
 | `task check-claude-json` | 预览 claude.json 变更（不执行）   |
+| `task check-codex`       | 预览 Codex 配置变更（不执行）     |
 | `task check`             | 预览完整部署变更（不执行）        |
 | `task check-sync`        | 预览配置同步变更（不执行）        |
-| `task sync-force`        | 同步配置，跳过确认（CI/CD 用）    |
+| `task sync-force`        | 同步所有配置，跳过确认（CI/CD 用）|
 | `task deploy-force`      | 完整部署，跳过确认（CI/CD 用）    |
 | `task list-tags`         | 查看所有可用 tags                 |
 | `task list-tasks`        | 查看所有 Ansible 任务             |
 | `task view-settings`     | 查看当前 ~/.claude/settings.json  |
 | `task view-claude-json`  | 查看当前 ~/.claude.json（格式化） |
+| `task view-codex-config` | 查看当前 ~/.codex/config.toml     |
 
 **说明**：
 
@@ -284,6 +316,26 @@ settings:
 
 - `task sync-force` - 同步配置不询问
 - `task deploy-force` - 完整部署不询问
+
+### Codex CLI 配置管理
+
+Codex CLI 配置与 Claude Code 并行部署、互不干扰，共享 API keys。
+
+**配置文件**：
+
+| Codex 概念 | 对应 Claude 概念 | 部署位置 |
+|-----------|-----------------|---------|
+| `config.toml` | `settings.json` | `~/.codex/config.toml` |
+| `AGENTS.md` | `CLAUDE.md` | `~/.codex/AGENTS.md` |
+
+**配置变量**：在 `inventory/<config>/group_vars/all/codex_config.yml` 中定义，包含模型提供商、模型名、沙箱模式等。
+
+**修改 Codex 配置流程**：
+
+1. 编辑 `inventory/<config>/group_vars/all/codex_config.yml`
+2. 预览变更：`task check-codex`
+3. 执行同步：`task sync-codex`
+4. 验证结果：`task view-codex-config`
 
 ### 修改配置流程
 
@@ -412,7 +464,7 @@ uv run ansible-playbook playbooks/setup.yml --tags sync_config --check --diff
 
 - 本项目使用**单一入口 playbook**（`setup.yml`）+ tags 控制执行阶段
 - 不要创建独立的 `install_*.yml`，统一通过 `setup.yml --tags <stage>` 执行
-- 可用 tags：`install_cli`、`install_plugins`、`sync_config`、`verify`
+- 可用 tags：`install_cli`、`install_plugins`、`sync_claude_json`、`sync_config`、`sync_codex_config`、`verify`
 - `install_cli` tag 为兼容保留；当前仅检查 Claude CLI，并在需要时安装 ccline
 - 查看所有 tags：`grep -E '^\s+tags:' playbooks/setup.yml | sort -u`
 
